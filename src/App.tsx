@@ -1,25 +1,71 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { createContext, useReducer } from "react";
+import styled from "@emotion/styled";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import axios from "axios";
 
+import Layout from "./Layout";
+import { Details } from "pages/Details";
+import { MovieList, MoviesType } from "pages/MovieList";
+import { MyList } from "pages/MyList";
+
+import "./App.css";
+interface ContextType {
+  state: MoviesType[];
+  dispatch: React.Dispatch<{ type: string; value: unknown }>;
+}
+
+const NotFound = styled.div`
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  padding: auto;
+  justify-content: center;
+  align-items: center;
+`;
+const REACT_APP_API_URL = process.env.REACT_APP_API_URL || "";
+
+export const client = axios.create({
+  baseURL: REACT_APP_API_URL,
+});
+
+const NoPage = () => (
+  <NotFound>
+    <span>404 Not Found</span>
+    <Link to="/">Go Back</Link>
+  </NotFound>
+);
+
+const initialState: MoviesType[] = [];
+export const MovieContext = createContext<ContextType>({
+  state: [],
+  dispatch: () => {},
+});
+const reducer = (state: MoviesType[], action: any) => {
+  switch (action.type) {
+    case "ADD_MOVIE":
+      return [...new Set([...state, action.value])];
+    case "DELETE_MOVIE":
+      return state.filter((movie) => movie.imdbID !== action.value.imdbID);
+    default:
+      return state;
+  }
+};
 function App() {
+  const [state, dispatch] = useReducer(reducer, initialState);
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <MovieContext.Provider value={{ state, dispatch }}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<MovieList />} />
+            <Route path="my-list" element={<MyList />} />
+            <Route path="movies/:id" element={<Details />} />
+            <Route path="*" element={<NoPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </MovieContext.Provider>
   );
 }
 
