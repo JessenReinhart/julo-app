@@ -36,7 +36,9 @@ const NoPage = () => (
   </NotFound>
 );
 
-const initialState: MoviesType[] = [];
+const initialState: MoviesType[] = JSON.parse(
+  localStorage?.getItem("list") || "[]"
+);
 export const MovieContext = createContext<ContextType>({
   state: [],
   dispatch: () => {},
@@ -44,9 +46,17 @@ export const MovieContext = createContext<ContextType>({
 const reducer = (state: MoviesType[], action: any) => {
   switch (action.type) {
     case "ADD_MOVIE":
-      return [...new Set([...state, action.value])];
+      const addedState = [...new Set([...state, action.value])];
+      localStorage.setItem("list", JSON.stringify(addedState));
+
+      return addedState;
     case "DELETE_MOVIE":
-      return state.filter((movie) => movie.imdbID !== action.value.imdbID);
+      const deletedState = state.filter(
+        (movie) => movie.imdbID !== action.value.imdbID
+      );
+      localStorage.setItem("list", JSON.stringify(deletedState));
+
+      return deletedState;
     default:
       return state;
   }

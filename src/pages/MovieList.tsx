@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { client } from "App";
 import { Card } from "components/Card";
+import { Loader } from "components/Loader";
 
 import useBottomDetect from "hooks/useBottomDetect";
 
@@ -20,32 +21,21 @@ type MovieResponseType = {
   totalResults: string;
 };
 
-const Section = styled.section`
+export const Section = styled.section`
   padding: 1em;
   display: flex;
   flex-direction: column;
   gap: 1em;
+  .endlist {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 1em;
+  }
 `;
 
 export const MovieList = () => {
   const [movies, setMovies] = useState<MoviesType[]>([]);
   const [page, setPage] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
-
-  const getData = async (s: string, page: number) => {
-    const { data } = await client.get<MovieResponseType>("", {
-      params: {
-        s,
-        page,
-      },
-    });
-    setLoading(false);
-    setMovies(
-      movies.length
-        ? (prevData) => [...new Set([...prevData, ...data.Search])]
-        : data.Search
-    );
-  };
 
   const reachedBottom = useBottomDetect();
   useEffect(() => {
@@ -54,14 +44,35 @@ export const MovieList = () => {
   }, [reachedBottom]);
 
   useEffect(() => {
-    getData("batman", page);
+    const getData = async () => {
+      const { data } = await client.get<MovieResponseType>("", {
+        params: {
+          s: "batman",
+          page,
+        },
+      });
+      setLoading(false);
+      setMovies(
+        movies.length
+          ? (prevData) => [...new Set([...prevData, ...data.Search])]
+          : data.Search
+      );
+    };
+    getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   return (
     <Section>
       <h3>Movie List</h3>
-      {loading ? "loading" : <Card movies={movies} />}
+      {loading ? (
+        <Loader />
+      ) : (
+        <>
+          <Card movies={movies} />
+          <span className="endlist">Loading...</span>
+        </>
+      )}
     </Section>
   );
 };
